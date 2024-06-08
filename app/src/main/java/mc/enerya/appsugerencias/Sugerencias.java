@@ -17,17 +17,29 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.enerya.appsugerencias.R;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Sugerencias extends AppCompatActivity {
 
@@ -37,6 +49,8 @@ public class Sugerencias extends AppCompatActivity {
     private  static  final int REQUEST_IMAGE_CAPTURE=1;
     int fotografiaTomada =0;
     ImageView imagen;
+    String idEquipo;
+    Bitmap bitmapf;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,7 +74,7 @@ public class Sugerencias extends AppCompatActivity {
                     // Verificar si la URL contiene el parámetro "id_equipo"
                     Log.e("URL", "igual");
                     Uri uri = Uri.parse(url);
-                    String idEquipo = uri.getQueryParameter("id_equipo");
+                    idEquipo = uri.getQueryParameter("id_equipo");
                     if (idEquipo != null) {
                         Log.e("ID_EQUIPO", idEquipo); // Imprimir el valor de id_equipo en la consola
                         TakePhoto();
@@ -165,9 +179,53 @@ public class Sugerencias extends AppCompatActivity {
 // Mostrar la imagen en el ImageView
             imagen.setImageBitmap(resizedBitmap);
             imagen.setVisibility(View.VISIBLE);
+ // Asignar el Bitmap a bitmapf
+            bitmapf = resizedBitmap;
+            ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
         }
 
 
+    }
+
+    private void ejecutarservicio(String URL)
+    {
+        StringRequest stringRequest=new  StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.e("Respuesta del servidor",response);
+                //VolverANuevaAuditoria();
+                // buscarProducto("https://vvnorth.com/comparacion_auditorf.php",NPlanta);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
+                //VolverANuevaAuditoria();
+            }
+        })
+        {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String,String> parametros =new HashMap<String,String>();
+                String imageData= imageToString(bitmapf);
+
+                parametros.put("id_equipo",idEquipo);
+                parametros.put("fotografia",imageData);
+
+                return parametros;
+            }
+        };
+        RequestQueue requestQueue= Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
+    private String imageToString(Bitmap bitmap)
+    {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG,20, outputStream);
+        byte[] imageBytes= outputStream.toByteArray();
+        String encodeImage= Base64.encodeToString(imageBytes,Base64.DEFAULT);
+        return encodeImage;
     }
 
 
