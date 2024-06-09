@@ -75,10 +75,15 @@ public class Sugerencias extends AppCompatActivity {
                     Log.e("URL", "igual");
                     Uri uri = Uri.parse(url);
                     idEquipo = uri.getQueryParameter("id_equipo");
-                    if (idEquipo != null) {
-                        Log.e("ID_EQUIPO", idEquipo); // Imprimir el valor de id_equipo en la consola
+                    if (uri.getQueryParameter("app") == null) {
+                        // Si no contiene el parámetro "app", añadirlo a la URL
+                        Uri.Builder builder = uri.buildUpon();
+                        builder.appendQueryParameter("app", "true");
+                        String newUrl = builder.build().toString();
+                        view.loadUrl(newUrl);
                         TakePhoto();
-
+                        // Devolver true para indicar que la navegación debe ser manejada por esta función
+                        return true;
                     }else
                     // Aquí puedes agregar cualquier otra lógica que necesites
                     return false; // o false según tu lógica
