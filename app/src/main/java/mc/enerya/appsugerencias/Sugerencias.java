@@ -51,7 +51,7 @@ public class Sugerencias extends AppCompatActivity {
     ImageView imagen;
     String idEquipo;
     Bitmap bitmapf;
-    @Override
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -59,7 +59,7 @@ public class Sugerencias extends AppCompatActivity {
         imagen = findViewById(R.id.imageView);
 
         imagen.setOnClickListener(new View.OnClickListener() {
-            @Override
+
             public void onClick(View view) {
                 TakePhoto();
             }
@@ -68,7 +68,7 @@ public class Sugerencias extends AppCompatActivity {
         myWebView.getSettings().setSupportZoom(false);
         myWebView.getSettings().setDomStorageEnabled(true);
         myWebView.setWebViewClient(new WebViewClient() {
-            @Override
+
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.startsWith("https://vvnorth.com/Sugerencia/juntasArranque.php")) {
                     // Verificar si la URL contiene el parámetro "id_equipo"
@@ -183,7 +183,7 @@ public class Sugerencias extends AppCompatActivity {
 
 // Mostrar la imagen en el ImageView
             imagen.setImageBitmap(resizedBitmap);
-            imagen.setVisibility(View.VISIBLE);
+            imagen.setVisibility(View.INVISIBLE);
  // Asignar el Bitmap a bitmapf
             bitmapf = resizedBitmap;
             ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
