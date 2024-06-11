@@ -2,6 +2,8 @@ package mc.enerya.appsugerencias;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
@@ -21,6 +23,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
@@ -38,37 +41,41 @@ import com.enerya.appsugerencias.R;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+/*import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.Body;
+import retrofit2.http.POST;*/
 
 public class Sugerencias extends AppCompatActivity {
 
     private String currentPhotoPath;
     private static final int IMAGE_PICK_CODE=1000;
     private  static  final int PERMISSION_CODE=1001;
-    private  static  final int REQUEST_IMAGE_CAPTURE=1;
+    private  static  final int REQUEST_IMAGE_CAPTURE=101;
+    private static final int REQUEST_CAMERA_PERMISSION = 100;
     int fotografiaTomada =0;
     ImageView imagen;
     String idEquipo;
     Bitmap bitmapf;
+    WebView myWebView;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        WebView myWebView = findViewById(R.id.webview);
+        myWebView = findViewById(R.id.webview);
         imagen = findViewById(R.id.imageView);
 
-        imagen.setOnClickListener(new View.OnClickListener() {
-
-            public void onClick(View view) {
-                TakePhoto();
-            }
-        });
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setSupportZoom(false);
         myWebView.getSettings().setDomStorageEnabled(true);
         myWebView.setWebViewClient(new WebViewClient() {
-
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.startsWith("https://vvnorth.com/Sugerencia/juntasArranque.php")) {
                     // Verificar si la URL contiene el parámetro "id_equipo"
@@ -81,7 +88,8 @@ public class Sugerencias extends AppCompatActivity {
                         builder.appendQueryParameter("app", "true");
                         String newUrl = builder.build().toString();
                         view.loadUrl(newUrl);
-                        TakePhoto();
+                        tomarFoto();
+                        //TakePhoto();
                         // Devolver true para indicar que la navegación debe ser manejada por esta función
                         return true;
                     }else
@@ -93,104 +101,61 @@ public class Sugerencias extends AppCompatActivity {
                 return false;
             }
         });
+        // Cargar la URL en el WebView
         myWebView.loadUrl("https://vvnorth.com/Sugerencia/");
     }
 
-
-
-    public void TakePhoto()
-    {
-        String fileName="photo";
-        File StorageDirectory= getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        try {
-            File imageFile=File.createTempFile(fileName,".jpg",StorageDirectory);
-            currentPhotoPath=imageFile.getAbsolutePath();
-            Uri imageUri=  FileProvider.getUriForFile(Sugerencias.this,
-                    "mc.enerya.appsugerencias",imageFile);
-
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri);
-            startActivityForResult(intent,1);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void tomarFoto(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            // Permiso ya concedido, lanzar la cámara directamente
+            lanzarCamara();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
         }
     }
 
-    private void pickImageFromGallery()
-    {
-// int to pick image
-        Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setType("image/*");
-        startActivityForResult(intent,IMAGE_PICK_CODE);
-    }
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_CODE: {
-                if (grantResults.length > 0 && grantResults[0] ==
-                        PackageManager.PERMISSION_GRANTED) {
-                    //permission was granted
-                    pickImageFromGallery();
-                } else {
-//permision was denied
-
-                }
-
+        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permiso concedido, lanzar la cámara
+                lanzarCamara();
+            } else {
+                // Permiso denegado, mostrar un mensaje al usuario
+                Toast.makeText(this, "Es necesario conceder el permiso de cámara para continuar", Toast.LENGTH_SHORT).show();
+               // myWebView.loadUrl("https://vvnorth.com/Sugerencia/principalColaborador.php");
             }
         }
     }
 
-    protected void onActivityResult(int requestCode, int resultCode,  Intent data) {
+    private void lanzarCamara() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            // Procesar la imagen capturada
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
 
-        if (requestCode == 1 && resultCode == RESULT_OK)
-        {
-            Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath);
 
-// Leer la información de rotación de la imagen desde los metadatos Exif
-            ExifInterface exifInterface = null;
-            try {
-                exifInterface = new ExifInterface(currentPhotoPath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
-            Matrix matrix = new Matrix();
-
-            switch (orientation) {
-                case ExifInterface.ORIENTATION_ROTATE_90:
-                    matrix.postRotate(90);
-                    break;
-                case ExifInterface.ORIENTATION_ROTATE_180:
-                    matrix.postRotate(180);
-                    break;
-                case ExifInterface.ORIENTATION_ROTATE_270:
-                    matrix.postRotate(270);
-                    break;
-                default:
-                    // No se necesita rotación
-                    break;
-            }
-
-// Aplicar la rotación a la imagen
-            Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-
-// Escalar la imagen si es necesario
             int newWidth = 1000;
             int newHeight = 1000;
-            Bitmap resizedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, newWidth, newHeight, false);
 
-// Mostrar la imagen en el ImageView
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(imageBitmap, newWidth, newHeight, false);
+            // Mostrar la imagen en un ImageView, por ejemplo
             imagen.setImageBitmap(resizedBitmap);
-            imagen.setVisibility(View.INVISIBLE);
- // Asignar el Bitmap a bitmapf
+            //imagen.setVisibility(View.VISIBLE);
             bitmapf = resizedBitmap;
             ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
+
         }
-
-
     }
+
 
     private void ejecutarservicio(String URL)
     {
@@ -198,14 +163,11 @@ public class Sugerencias extends AppCompatActivity {
             @Override
             public void onResponse(String response) {
                 Log.e("Respuesta del servidor",response);
-                //VolverANuevaAuditoria();
-                // buscarProducto("https://vvnorth.com/comparacion_auditorf.php",NPlanta);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
-                //VolverANuevaAuditoria();
             }
         })
         {
@@ -227,11 +189,13 @@ public class Sugerencias extends AppCompatActivity {
     private String imageToString(Bitmap bitmap)
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG,20, outputStream);
+        bitmap.compress(Bitmap.CompressFormat.JPEG,100, outputStream);
         byte[] imageBytes= outputStream.toByteArray();
         String encodeImage= Base64.encodeToString(imageBytes,Base64.DEFAULT);
         return encodeImage;
     }
+
+
 
 
 
