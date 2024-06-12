@@ -88,19 +88,21 @@ public class Sugerencias extends AppCompatActivity {
                         builder.appendQueryParameter("app", "true");
                         String newUrl = builder.build().toString();
                         view.loadUrl(newUrl);
-                        tomarFoto();
-                        //TakePhoto();
+
                         // Devolver true para indicar que la navegación debe ser manejada por esta función
                         return true;
                     }else
                     // Aquí puedes agregar cualquier otra lógica que necesites
-                    return false; // o false según tu lógica
-                }else{
-                    imagen.setVisibility(View.INVISIBLE);
+                    return false;
+                }else if(url.startsWith("https://vvnorth.com/Sugerencia/ejecutarCamaraMovil.php")){
+                    tomarFoto();
+                    return false;
                 }
                 return false;
+
             }
         });
+
         // Cargar la URL en el WebView
         myWebView.loadUrl("https://vvnorth.com/Sugerencia/");
     }
@@ -123,7 +125,7 @@ public class Sugerencias extends AppCompatActivity {
                 lanzarCamara();
             } else {
                 // Permiso denegado, mostrar un mensaje al usuario
-                Toast.makeText(this, "Es necesario conceder el permiso de cámara para continuar", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Es necesario conceder el permiso de cámara", Toast.LENGTH_LONG).show();
                // myWebView.loadUrl("https://vvnorth.com/Sugerencia/principalColaborador.php");
             }
         }
@@ -163,11 +165,18 @@ public class Sugerencias extends AppCompatActivity {
             @Override
             public void onResponse(String response) {
                 Log.e("Respuesta del servidor",response);
+                if(response.equals("Foto Guardada")){
+                    myWebView.loadUrl("https://vvnorth.com/Sugerencia/principalColaborador.php");
+                    Toast.makeText(Sugerencias.this, "La fotografía se tomo con éxito", Toast.LENGTH_LONG).show();
+                }else{
+                    Toast.makeText(Sugerencias.this, "La fotografía no se guardo con éxito ", Toast.LENGTH_LONG).show();
+                }
+
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_LONG).show();
             }
         })
         {
@@ -186,12 +195,12 @@ public class Sugerencias extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
-    private String imageToString(Bitmap bitmap)
-    {
+    private String imageToString(Bitmap bitmap) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG,100, outputStream);
-        byte[] imageBytes= outputStream.toByteArray();
-        String encodeImage= Base64.encodeToString(imageBytes,Base64.DEFAULT);
+        // Reducir la calidad de compresión de la imagen
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream);
+        byte[] imageBytes = outputStream.toByteArray();
+        String encodeImage = Base64.encodeToString(imageBytes, Base64.DEFAULT);
         return encodeImage;
     }
 
