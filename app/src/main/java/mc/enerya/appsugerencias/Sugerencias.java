@@ -62,9 +62,10 @@ public class Sugerencias extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     int fotografiaTomada =0;
     ImageView imagen;
-    String idEquipo;
+    String idEquipo,WhoTakePhoto;
     Bitmap bitmapf;
     WebView myWebView;
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,7 +80,7 @@ public class Sugerencias extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.startsWith("https://vvnorth.com/Sugerencia/juntasArranque.php")) {
                     // Verificar si la URL contiene el parámetro "id_equipo"
-                    Log.e("URL", "igual");
+                    //Log.e("URL", "igual");
                     Uri uri = Uri.parse(url);
                     idEquipo = uri.getQueryParameter("id_equipo");
                     if (uri.getQueryParameter("app") == null) {
@@ -94,7 +95,26 @@ public class Sugerencias extends AppCompatActivity {
                     }else
                     // Aquí puedes agregar cualquier otra lógica que necesites
                     return false;
+                } if (url.startsWith("https://vvnorth.com/Sugerencia/seguridadColaborador.php")) {
+                    // Verificar si la URL contiene el parámetro "id_equipo"
+                    //Log.e("URL", "igual");
+                    Uri uri = Uri.parse(url);
+                    if (uri.getQueryParameter("app") == null) {
+                        // Si no contiene el parámetro "app", añadirlo a la URL
+                        Uri.Builder builder = uri.buildUpon();
+                        builder.appendQueryParameter("app", "true");
+                        String newUrl = builder.build().toString();
+                        view.loadUrl(newUrl);
+                        // Devolver true para indicar que la navegación debe ser manejada por esta función
+                        return true;
+                    }else
+                        // Aquí puedes agregar cualquier otra lógica que necesites
+                        return false;
                 }else if(url.startsWith("https://vvnorth.com/Sugerencia/ejecutarCamaraMovil.php")){
+                    tomarFoto();
+                    return false;
+                }else if(url.startsWith("https://vvnorth.com/Sugerencia/ejecutarCamaraMovilSeguridad.php")){
+                    WhoTakePhoto = "Seguridad";
                     tomarFoto();
                     return false;
                 }
@@ -153,8 +173,11 @@ public class Sugerencias extends AppCompatActivity {
             imagen.setImageBitmap(resizedBitmap);
             //imagen.setVisibility(View.VISIBLE);
             bitmapf = resizedBitmap;
-            ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
-
+            if(WhoTakePhoto.equals("Seguridad")){
+                ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografiaSeguridad.php");
+            }else{
+                ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
+            }
         }
     }
 
