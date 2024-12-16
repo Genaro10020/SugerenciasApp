@@ -62,7 +62,7 @@ public class Sugerencias extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     int fotografiaTomada =0;
     ImageView imagen;
-    String idEquipo,WhoTakePhoto;
+    String idEquipo,WhoTakePhoto,UltimoID;
     Bitmap bitmapf;
     WebView myWebView;
 
@@ -114,6 +114,8 @@ public class Sugerencias extends AppCompatActivity {
                     tomarFoto();
                     return false;
                 }else if(url.startsWith("https://vvnorth.com/Sugerencia/ejecutarCamaraMovilSeguridad.php")){
+                    Uri uri = Uri.parse(url);
+                    UltimoID = uri.getQueryParameter("UltimoID");
                     WhoTakePhoto = "Seguridad";
                     tomarFoto();
                     return false;
@@ -174,7 +176,7 @@ public class Sugerencias extends AppCompatActivity {
             //imagen.setVisibility(View.VISIBLE);
             bitmapf = resizedBitmap;
             if(WhoTakePhoto.equals("Seguridad")){
-                ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografiaSeguridad.php");
+                ejecutarservicioSeguridad("https://vvnorth.com/Sugerencia/app/guardarFotografiaSeguridad.php");
             }else{
                 ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
             }
@@ -211,6 +213,43 @@ public class Sugerencias extends AppCompatActivity {
                 parametros.put("id_equipo",idEquipo);
                 parametros.put("fotografia",imageData);
 
+                return parametros;
+            }
+        };
+        RequestQueue requestQueue= Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
+
+    private void ejecutarservicioSeguridad(String URL)
+    {
+        StringRequest stringRequest=new  StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.e("Respuesta del servidor",response);
+                if(response.equals("Foto Guardada")){
+
+                    myWebView.loadUrl("https://vvnorth.com/Sugerencia/seguridadColaborador.php?app=app");
+
+                    Toast.makeText(Sugerencias.this, "La fotografía se tomo con éxito", Toast.LENGTH_LONG).show();
+                }else{
+                    Toast.makeText(Sugerencias.this, "La fotografía no se guardo con éxito ", Toast.LENGTH_LONG).show();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_LONG).show();
+            }
+        })
+        {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String,String> parametros =new HashMap<String,String>();
+                String imageData= imageToString(bitmapf);
+                parametros.put("id_hallazgo",UltimoID);
+                parametros.put("fotografia",imageData);
                 return parametros;
             }
         };
