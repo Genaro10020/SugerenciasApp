@@ -62,7 +62,7 @@ public class Sugerencias extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     int fotografiaTomada =0;
     ImageView imagen;
-    String idEquipo,WhoTakePhoto,UltimoID;
+    String idEquipo,WhoTakePhoto,UltimoID,NumeroNomina;
     Bitmap bitmapf;
     WebView myWebView;
 
@@ -107,15 +107,14 @@ public class Sugerencias extends AppCompatActivity {
                         view.loadUrl(newUrl);
                         // Devolver true para indicar que la navegación debe ser manejada por esta función
                         return true;
-                    }else
-                        // Aquí puedes agregar cualquier otra lógica que necesites
-                        return false;
+                    }
                 }else if(url.startsWith("https://vvnorth.com/Sugerencia/ejecutarCamaraMovil.php")){
                     tomarFoto();
                     return false;
                 }else if(url.startsWith("https://vvnorth.com/Sugerencia/ejecutarCamaraMovilSeguridad.php")){
                     Uri uri = Uri.parse(url);
                     UltimoID = uri.getQueryParameter("UltimoID");
+                    NumeroNomina = uri.getQueryParameter("NumeroNomina");
                     WhoTakePhoto = "Seguridad";
                     tomarFoto();
                     return false;
@@ -248,6 +247,7 @@ public class Sugerencias extends AppCompatActivity {
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String,String> parametros =new HashMap<String,String>();
                 String imageData= imageToString(bitmapf);
+                parametros.put("numero_nomina",NumeroNomina);
                 parametros.put("id_hallazgo",UltimoID);
                 parametros.put("fotografia",imageData);
                 return parametros;
