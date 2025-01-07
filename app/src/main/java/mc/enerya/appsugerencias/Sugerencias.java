@@ -62,7 +62,8 @@ public class Sugerencias extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     int fotografiaTomada =0;
     ImageView imagen;
-    String idEquipo,WhoTakePhoto,UltimoID,NumeroNomina;
+    String WhoTakePhoto="";
+    String idEquipo,UltimoID,NumeroNomina;
     Bitmap bitmapf;
     WebView myWebView;
 
@@ -92,7 +93,7 @@ public class Sugerencias extends AppCompatActivity {
 
                         // Devolver true para indicar que la navegación debe ser manejada por esta función
                         return true;
-                    }else
+                    }
                     // Aquí puedes agregar cualquier otra lógica que necesites
                     return false;
                 } if (url.startsWith("https://vvnorth.com/Sugerencia/seguridadColaborador.php")) {
@@ -177,6 +178,7 @@ public class Sugerencias extends AppCompatActivity {
             if(WhoTakePhoto.equals("Seguridad")){
                 ejecutarservicioSeguridad("https://vvnorth.com/Sugerencia/app/guardarFotografiaSeguridad.php");
             }else{
+                //Log.e("Respuesta","Es junta de arranque");
                 ejecutarservicio("https://vvnorth.com/Sugerencia/app/guardarFotografia.php");
             }
         }
@@ -228,7 +230,7 @@ public class Sugerencias extends AppCompatActivity {
                 Log.e("Respuesta del servidor",response);
                 if(response.equals("Foto Guardada")){
 
-                    myWebView.loadUrl("https://vvnorth.com/Sugerencia/seguridadColaborador.php?app=app");
+                    myWebView.loadUrl("https://vvnorth.com/Sugerencia/seguridadColaborador.php?app=app&&FotoTomada='true'");
 
                     Toast.makeText(Sugerencias.this, "La fotografía se tomo con éxito", Toast.LENGTH_LONG).show();
                 }else{
